@@ -19,7 +19,7 @@ setup(
     url="https://github.com/exatrkx/exatrkx-work",
     packages=find_packages(),
     install_requires=[
-        "graph_nets",
+        "graph_nets==1.0.5",
         'tensorflow-gpu<2',
         'gast==0.2.2',
         "future",
@@ -37,6 +37,7 @@ setup(
         'trackml@ https://github.com/LAL/trackml-library/tarball/master#egg=trackml-3',
         'tables',
         'h5py',
+        'setgpu'
     ],
     setup_requires=['trackml'],
     classifiers=[

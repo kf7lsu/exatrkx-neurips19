@@ -120,5 +120,6 @@ dependencies:
     - torchvision==0.2.1
     - werkzeug==0.15.4
     - wrapt==1.11.2
+    - setGPU==0.0.7
 prefix: ~/.conda/envs/exatrkx
 

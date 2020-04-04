@@ -1,7 +1,7 @@
 track_ml:
-    dir:           ./inputdata/train_100_events
-#    blacklist_dir: ./inputdata/blacklist
-    detector: ./inputdata/detectors.csv
+    dir:           /scratch/data/exatrkx/train_100_events
+    blacklist_dir: /scratch/data/exatrkx/blacklist_training
+    detector: /scratch/data/exatrkx/detectors.csv
     layers: [7, 8, 9, 10, 24, 25, 26, 27, 40, 41]
 
 data:
@@ -30,7 +30,7 @@ segment_training:
     log_name: big.log
     parameters:
         time_lapse:  60 # how often save checkpoint in seconds
-        batch_size: 4
+        batch_size: 8
         iterations: 80000
         iter_per_job: 80000
         n_iters: 8

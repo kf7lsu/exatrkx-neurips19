@@ -1,5 +1,5 @@
 # Input/output configuration
-input_dir: ./inputdata/train_100_events
+input_dir: /scratch/data/exatrkx/train_100_events
 output_dir: ./out/hitgraphs_100
 n_files: 100
 
