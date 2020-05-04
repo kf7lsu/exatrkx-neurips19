@@ -53,6 +53,7 @@ setup(
         'scripts/tf_train_pairs_all',
         'scripts/train_nx_graph',
         'scripts/evaluate_gnn_models',
+        'scripts/evaluate_gnn_simple',
         'scripts/evaluate_event',
         'scripts/hits_graph_to_tuple',
         'scripts/make_doublets_from_NNs',
