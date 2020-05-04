@@ -1,0 +1,104 @@
+#!/usr/bin/env python                                                                                                             
+import networkx as nx
+import numpy as np
+
+from graph_nets import utils_np, utils_tf
+
+from heptrkx import load_yaml
+from heptrkx.nx_graph import utils_plot, utils_data, utils_train, prepare, utils_test
+from heptrkx.postprocess import wrangler, analysis, inference
+from heptrkx import master
+
+import os
+import glob
+import argparse
+import sys
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description='evalute GNN models')
+    add_arg = parser.add_argument
+    add_arg('config', help='configuration file for training')
+    add_arg('evtid', type=int, help='event ID')
+    add_arg('--iteration',  type=int, default=-1)
+    add_arg('--ckpt', default=None)
+
+    args = parser.parse_args()
+    evtid = args.evtid
+    iteration = args.iteration
+    input_ckpt = args.ckpt
+
+    from heptrkx.postprocess.evaluate_tf import create_evaluator
+
+    config_file = args.config
+    config = load_yaml(config_file)
+    file_dir = config['make_graph']['out_graph']
+    hits_graph_dir = config['data']['input_hitsgraph_dir']
+    trk_dir = config['track_ml']['dir']
+    if input_ckpt is None:
+        input_ckpt = os.path.join(config['segment_training']['output_dir'],
+                                  config['segment_training']['prod_name'])
+
+    file_names = [os.path.join(file_dir, "event000001000_g000000000_INPUT.npz")]
+    true_features = ['pt', 'particle_id', 'nhits']
+    batch_size = 1
+
+    n_batches = 1
+
+    event = master.Event(trk_dir, evtid)
+    hits = event.hits
+    truth = event.truth
+    model = create_evaluator(config_file, iteration, input_ckpt)
+
+    all_graphs = []
+    is_digraph = True
+    is_bidirection = False
+    # evaluate each graph                                                                                                        
+
+    input_graphs = []
+    target_graphs = []
+    file_name = file_names[0]
+    with np.load(file_name) as f:
+        input_graphs.append(dict(f.items()))
+
+    with np.load(file_name.replace("INPUT", "TARGET")) as f:
+        target_graphs.append(dict(f.items()))
+
+    graphs = model(utils_np.data_dicts_to_graphs_tuple(input_graphs),
+                   utils_np.data_dicts_to_graphs_tuple(target_graphs),
+                   use_digraph=is_digraph, bidirection=is_bidirection)
+
+    I = input_graphs[0]
+    G = graphs[0]
+
+    nodes = I['nodes']
+    edges = I['edges']
+    receivers = I['receivers']
+    senders = I['senders']
+    globs = I['globals']
+
+    predict = np.array([G.edges[edge]['predict'][0] for edge in G.edges()])
+
+    print('input node features:')
+    print(' shape:', nodes.shape)
+    print(' values:', nodes)
+    print()
+    print('input edge features:')
+    print(' shape:', edges.shape)
+    print(' values:', edges)
+    print()
+    print('input global features:')
+    print(' shape:', globs.shape)
+    print(' values:', globs)
+    print()
+    print('input receivers:')
+    print(' shape:', receivers.shape)
+    print(' values:', receivers)
+    print()
+    print('input senders:')
+    print(' shape:', senders.shape)
+    print(' values:', senders)
+    print()
+    print('predicted edge weights:')
+    print(' shape:', predict.shape)
+    print(' values:', predict)
