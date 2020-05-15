@@ -278,7 +278,7 @@ if __name__ == "__main__":
     e = e.dot(decoder_edge_weights[0])
     e += decoder_edge_biases[0]
     e = np.maximum(0,e)
-    e = n.dot(decoder_edge_weights[1])
+    e = e.dot(decoder_edge_weights[1])
     e += decoder_edge_biases[1]
     e = np.maximum(0,e)
     
@@ -288,7 +288,7 @@ if __name__ == "__main__":
     e = e.dot(output_edge_weights[0])
     e += output_edge_biases[0]
     e = np.maximum(0,e)
-    e = n.dot(output_edge_weights[1])
+    e = e.dot(output_edge_weights[1])
     e += output_edge_biases[1]
 
     def sigmoid(x):  
