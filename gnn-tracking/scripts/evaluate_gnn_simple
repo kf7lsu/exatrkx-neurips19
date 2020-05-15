@@ -48,7 +48,7 @@ if __name__ == "__main__":
     event = master.Event(trk_dir, evtid)
     hits = event.hits
     truth = event.truth
-    model = create_evaluator(config_file, iteration, input_ckpt)
+    model, model_c, sess = create_evaluator(config_file, iteration, input_ckpt)
 
     all_graphs = []
     is_digraph = True
@@ -102,3 +102,111 @@ if __name__ == "__main__":
     print('predicted edge weights:')
     print(' shape:', predict.shape)
     print(' values:', predict)
+
+    core_edge_weights = []
+    core_edge_biases = []
+    core_node_weights = []
+    core_node_biases = []
+    for layer in model_c._core._edge_block._edge_model._layers:
+        for sublayer in layer._layers:
+            core_edge_weights.append(sublayer._w.eval(session=sess))
+            core_edge_biases.append(sublayer._b.eval(session=sess))
+    for layer in model_c._core._node_block._node_model._layers:
+        for sublayer in layer._layers:
+            core_node_weights.append(sublayer._w.eval(session=sess))
+            core_node_biases.append(sublayer._b.eval(session=sess))
+
+    encoder_edge_biases = []
+    encoder_edge_weights = []
+    encoder_node_biases = []
+    encoder_node_weights = []
+    decoder_edge_biases = []
+    decoder_edge_weights = []
+    decoder_node_biases = []
+    decoder_node_weights = []
+    output_edge_biases = []
+    output_edge_weights = []
+    for v in model_c._encoder._network._edge_model.trainable_variables:
+        if 'b:0' in v.name:
+            encoder_edge_biases.append(v.eval(session=sess))
+        elif 'w:0' in v.name:
+            encoder_edge_weights.append(v.eval(session=sess))
+    for v in model_c._encoder._network._node_model.trainable_variables:
+        if 'b:0' in v.name:
+            encoder_node_biases.append(v.eval(session=sess))
+        elif 'w:0' in v.name:
+            encoder_node_weights.append(v.eval(session=sess))
+    for v in model_c._decoder._edge_model.trainable_variables:
+        if 'b:0' in v.name:
+            decoder_edge_biases.append(v.eval(session=sess))
+        elif 'w:0' in v.name:
+            decoder_edge_weights.append(v.eval(session=sess))
+    for v in model_c._output_transform._edge_model.trainable_variables:
+        if 'b:0' in v.name:
+            output_edge_biases.append(v.eval(session=sess))
+        elif 'w:0' in v.name:
+            output_edge_weights.append(v.eval(session=sess))
+
+    print()
+    print('model:')
+    print()
+
+    for i, (w, b) in enumerate(zip(encoder_node_weights, encoder_node_biases)):
+        print('encoder node weights layer {}:'.format(i))
+        print(' shape:', w.shape)
+        print(' values:', w)
+        print()
+        print('encoder node biases layer {}:'.format(i))
+        print(' shape:', b.shape)
+        print(' values:', b)
+        print()
+
+    for i, (w, b) in enumerate(zip(encoder_edge_weights, encoder_edge_biases)):
+        print('encoder edge weights layer {}:'.format(i))
+        print(' shape:', w.shape)
+        print(' values:', w)
+        print()
+        print('encoder edge biases layer {}:'.format(i))
+        print(' shape:', b.shape)
+        print(' values:', b)
+        print()
+
+    for i, (w, b) in enumerate(zip(core_edge_weights, core_edge_biases)):
+        print('core edge weights layer {}:'.format(i))
+        print(' shape:', w.shape)
+        print(' values:', w)
+        print()
+        print('core edge biases layer {}:'.format(i))
+        print(' shape:', b.shape)
+        print(' values:', b)
+        print()
+
+    for i, (w, b) in enumerate(zip(core_node_weights, core_node_biases)):
+        print('core node weights layer {}:'.format(i))
+        print(' shape:', w.shape)
+        print(' values:', w)
+        print()
+        print('core node biases layer {}:'.format(i))
+        print(' shape:', b.shape)
+        print(' values:', b)
+        print()
+
+    for i, (w, b) in enumerate(zip(decoder_edge_weights, decoder_edge_biases)):
+        print('decoder edge weights layer {}:'.format(i))
+        print(' shape:', w.shape)
+        print(' values:', w)
+        print()
+        print('decoder edge biases layer {}:'.format(i))
+        print(' shape:', b.shape)
+        print(' values:', b)
+        print()
+
+    for i, (w, b) in enumerate(zip(output_edge_weights, output_edge_biases)):
+        print('output edge weights layer {}:'.format(i))
+        print(' shape:', w.shape)
+        print(' values:', w)
+        print()
+        print('output edge biases layer {}:'.format(i))
+        print(' shape:', b.shape)
+        print(' values:', b)
+        print()
