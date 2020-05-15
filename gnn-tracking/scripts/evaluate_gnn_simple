@@ -76,6 +76,9 @@ if __name__ == "__main__":
     receivers = I['receivers']
     senders = I['senders']
     globs = I['globals']
+    n_nodes = nodes.shape[0]
+    n_edges = edges.shape[0]
+
 
     predict = np.array([G.edges[edge]['predict'][0] for edge in G.edges()])
 
@@ -122,8 +125,6 @@ if __name__ == "__main__":
     encoder_node_weights = []
     decoder_edge_biases = []
     decoder_edge_weights = []
-    decoder_node_biases = []
-    decoder_node_weights = []
     output_edge_biases = []
     output_edge_weights = []
     for v in model_c._encoder._network._edge_model.trainable_variables:
@@ -211,25 +212,96 @@ if __name__ == "__main__":
         print(' values:', b)
         print()
 
-
-
     print('evaulate by hand:')
-
+    print()
     print('input nodes shape:', nodes.shape)
+    print('input edges shape:', edges.shape)
+    print()
 
     n = nodes.dot(encoder_node_weights[0])
     n += encoder_node_biases[0]
+    n = np.maximum(0,n)
     n = n.dot(encoder_node_weights[1])
     n += encoder_node_biases[1]
-
-    print('nodes shape after encoder:', n.shape)
-
-    print('inpurt edges shape:', edges.shape)
+    n = np.maximum(0,n)
 
     e = edges.dot(encoder_edge_weights[0])
     e += encoder_edge_biases[0]
+    e = np.maximum(0,e)
     e = e.dot(encoder_edge_weights[1])
     e += encoder_edge_biases[1]
+    e = np.maximum(0,e)
 
+    print('nodes shape after encoder:', n.shape)
     print('edges shape after encoder:', e.shape)
+    print()
+    n0 = n
+    e0 = e
+    for _ in range(config['segment_training']['parameters']['n_iters']):
+        core_input_n = np.concatenate([n0, n], axis=1)
+        core_input_e = np.concatenate([e0, e], axis=1)
 
+        print('nodes shape after core concat:', core_input_n.shape)
+        print('edges shape after core concat:', core_input_e.shape)
+        print()
+        nodes_receive = np.zeros((n_nodes,core_edge_biases[1].shape[0]))
+        edges_update = np.zeros((n_edges,core_edge_biases[1].shape[0]))
+        for k, (r, s) in enumerate(zip(receivers, senders)):
+            l = np.concatenate([core_input_e[k],core_input_n[r],core_input_n[s]])
+            l = l.dot(core_edge_weights[0])
+            l += core_edge_biases[0]
+            l = np.maximum(0,l)
+            l = l.dot(core_edge_weights[1])
+            l += core_edge_biases[1]
+            l = np.maximum(0,l)
+            edges_update[k] = l
+            nodes_receive[r] += l
+
+        nodes_update = np.zeros((n_nodes,core_node_biases[1].shape[0]))
+        for i in range(n_nodes):
+            l = np.concatenate([nodes_receive[i], core_input_n[i]])
+            l = l.dot(core_node_weights[0])
+            l += core_node_biases[0]
+            l = np.maximum(0,l)
+            l = l.dot(core_node_weights[1])
+            l += core_node_biases[1]
+            l = np.maximum(0,l)
+            nodes_update[i] = l
+
+        n = nodes_update
+        e = edges_update
+
+    print('nodes shape after core update:', n.shape)
+    print('edges shape after core update:', e.shape)
+    print()
+
+    e = e.dot(decoder_edge_weights[0])
+    e += decoder_edge_biases[0]
+    e = np.maximum(0,e)
+    e = n.dot(decoder_edge_weights[1])
+    e += decoder_edge_biases[1]
+    e = np.maximum(0,e)
+    
+    print('edges shape after decoder:', e.shape)
+    print()
+    
+    e = e.dot(output_edge_weights[0])
+    e += output_edge_biases[0]
+    e = np.maximum(0,e)
+    e = n.dot(output_edge_weights[1])
+    e += output_edge_biases[1]
+
+    def sigmoid(x):  
+        return np.exp(-np.logaddexp(0, -x))
+        
+    e = sigmoid(e)
+    e = e.flatten()
+    
+    print('predicted edge weights from model:')
+    print(' shape:', predict.shape)
+    print(' values:', predict)
+    print()
+    print('predicted edge weights by hand:')
+    print(' shape:', e.shape)
+    print(' values:', e)
+        
