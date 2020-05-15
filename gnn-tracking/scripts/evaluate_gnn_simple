@@ -210,3 +210,26 @@ if __name__ == "__main__":
         print(' shape:', b.shape)
         print(' values:', b)
         print()
+
+
+
+    print('evaulate by hand:')
+
+    print('input nodes shape:', nodes.shape)
+
+    n = nodes.dot(encoder_node_weights[0])
+    n += encoder_node_biases[0]
+    n = n.dot(encoder_node_weights[1])
+    n += encoder_node_biases[1]
+
+    print('nodes shape after encoder:', n.shape)
+
+    print('inpurt edges shape:', edges.shape)
+
+    e = edges.dot(encoder_edge_weights[0])
+    e += encoder_edge_biases[0]
+    e = e.dot(encoder_edge_weights[1])
+    e += encoder_edge_biases[1]
+
+    print('edges shape after encoder:', e.shape)
+
