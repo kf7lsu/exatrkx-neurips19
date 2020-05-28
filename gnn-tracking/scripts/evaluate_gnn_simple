@@ -291,6 +291,9 @@ if __name__ == "__main__":
     e = e.dot(output_edge_weights[1])
     e += output_edge_biases[1]
 
+    print('edges shape after output:', e.shape)
+    print()
+
     def sigmoid(x):  
         return np.exp(-np.logaddexp(0, -x))
         
