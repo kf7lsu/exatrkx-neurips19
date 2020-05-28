@@ -66,6 +66,12 @@ def create_evaluator(config_name, iteration, input_ckpt=None):
         }, feed_dict=feed_dict)
         output = predictions['outputs'][-1]
 
+        pred_node_names = []
+        for gtuple in output_ops_tr:
+            pred_node_names.append(gtuple.edges.name[:-2]) # remove ':0'
+        constant_graph = tf.compat.v1.graph_util.convert_variables_to_constants(sess, sess.graph.as_graph_def(), pred_node_names)
+        tf.train.write_graph(constant_graph, './', 'constantgraph.pb', as_text=False)
+
         return utils_data.predicted_graphs_to_nxs(
             output, input_graphs, target_graphs,
             use_digraph=use_digraph,
@@ -140,19 +146,7 @@ def create_profiler(config_name, iteration, input_ckpt=None):
         flops = 1
 
         #feed_dict = {input_ph: input_graphs, target_ph: target_graphs}
-        #pred_node_names = []
-        #for gtuple in output_ops_tr:
-        #    pred_node_names.append(gtuple.nodes.name[:-2]) # remove ':0'
-        #    pred_node_names.append(gtuple.edges.name[:-2]) # remove ':0'
-        #    pred_node_names.append(gtuple.globals.name[:-2]) # remove ':0'
-        #    pred_node_names.append(gtuple.receivers.name[:-2]) # remove ':0'
-        #    pred_node_names.append(gtuple.senders.name[:-2]) # remove ':0'
-        #    pred_node_names.append(gtuple.n_node.name[:-2]) # remove ':0'
-        #    pred_node_names.append(gtuple.n_edge.name[:-2]) # remove ':0'
-        #for gtuple in target_ph:
-        #    pred_node_names.append(gtuple.name[:-2]) # remove ':0'
-        #from tensorflow.python.framework import graph_util
-        #constant_graph_def = tf.compat.v1.graph_util.convert_variables_to_constants(sess, sess.graph.as_graph_def(), pred_node_names)
+
         #constant_graph = tf.Graph()
         #with constant_graph.as_default():
         #    tf.import_graph_def(constant_graph_def,name='') 

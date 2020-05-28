@@ -237,12 +237,12 @@ if __name__ == "__main__":
     print()
     n0 = n
     e0 = e
-    for _ in range(config['segment_training']['parameters']['n_iters']):
+    for it in range(config['segment_training']['parameters']['n_iters']):
         core_input_n = np.concatenate([n0, n], axis=1)
         core_input_e = np.concatenate([e0, e], axis=1)
 
-        print('nodes shape after core concat:', core_input_n.shape)
-        print('edges shape after core concat:', core_input_e.shape)
+        print('nodes shape after concat iter {}:'.format(it), core_input_n.shape)
+        print('edges shape after concat iter {}:'.format(it), core_input_e.shape)
         print()
         nodes_receive = np.zeros((n_nodes,core_edge_biases[1].shape[0]))
         edges_update = np.zeros((n_edges,core_edge_biases[1].shape[0]))
@@ -271,9 +271,9 @@ if __name__ == "__main__":
         n = nodes_update
         e = edges_update
 
-    print('nodes shape after core update:', n.shape)
-    print('edges shape after core update:', e.shape)
-    print()
+        print('nodes shape after core iter {}:'.format(it), n.shape)
+        print('edges shape after core iter {}:'.format(it), e.shape)
+        print()
 
     e = e.dot(decoder_edge_weights[0])
     e += decoder_edge_biases[0]
