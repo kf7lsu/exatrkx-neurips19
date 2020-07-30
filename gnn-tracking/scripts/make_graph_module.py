@@ -5,6 +5,8 @@ import numpy as np
 import setGPU
 
 import tensorflow as tf
+#tf.random.set_seed(42)
+tf.compat.v1.set_random_seed(42)
 from graph_nets import utils_np, utils_tf
 
 from heptrkx import load_yaml
@@ -165,11 +167,11 @@ senders = input_graphs[0]['senders']
 predict = output_graphs[0]['edges']
 
 # save the input and output graphs for use in test bench
-np.savetxt('tb_input_node_features.dat',nodes.reshape((1,-1)),delimiter=', ')
-np.savetxt('tb_input_edge_features.dat',edges.reshape((1,-1)),delimiter=', ')
-np.savetxt('tb_receivers.dat',receivers.reshape((1,-1)),delimiter=', ',fmt='%d')
-np.savetxt('tb_senders.dat',senders.reshape((1,-1)),delimiter=', ',fmt='%d')
-np.savetxt('tb_output_edge_predictions.dat',predict.reshape((1,-1)),delimiter=', ')
+np.savetxt('tb_input_node_features.dat',nodes.reshape((1,-1)),delimiter=' ')
+np.savetxt('tb_input_edge_features.dat',edges.reshape((1,-1)),delimiter=' ')
+np.savetxt('tb_receivers.dat',receivers.reshape((1,-1)),delimiter=' ',fmt='%d')
+np.savetxt('tb_senders.dat',senders.reshape((1,-1)),delimiter=' ',fmt='%d')
+np.savetxt('tb_output_edge_predictions.dat',predict.reshape((1,-1)),delimiter=' ')
 
 import hls4ml
 # save the weights for use in hls4ml
