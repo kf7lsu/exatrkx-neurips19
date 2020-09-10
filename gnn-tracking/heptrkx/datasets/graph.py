@@ -37,7 +37,7 @@ def save_graph(graph, filename):
 
 def save_graphs(graphs, filenames):
     for graph, filename in zip(graphs, filenames):
-        save_graph(graph, filename)
+        if graph is not None: save_graph(graph, filename)
 
 def load_graph(filename):
     """Reade a single graph NPZ"""

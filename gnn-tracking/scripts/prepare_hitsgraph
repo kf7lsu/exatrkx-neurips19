@@ -100,7 +100,11 @@ def construct_graph(hits, layer_pairs,
         # Construct the segments
         segments.append(select_segments(hits1, hits2, phi_slope_max, z0_max))
     # Combine segments from all layer pairs
-    segments = pd.concat(segments)
+    try:
+        segments = pd.concat(segments)
+    except ValueError:
+        logging.info('skipping empty graph')
+        return None, None
 
     # Prepare the graph matrices
     n_hits = hits.shape[0]
@@ -235,7 +239,8 @@ def process_event(prefix, output_dir, pt_min, n_eta_sections, n_phi_sections,
     logging.info('Event %i, writing graphs', evtid)
     save_graphs(graphs, filenames)
     for ID, file_name in zip(IDs, filenames_ID):
-        np.savez(file_name, ID=ID)
+        if ID is not None: 
+            np.savez(file_name, ID=ID)
 
 def main():
     """Main function"""

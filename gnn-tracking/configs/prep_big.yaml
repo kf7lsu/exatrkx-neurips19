@@ -1,13 +1,13 @@
 # Input/output configuration
 input_dir: /scratch/data/exatrkx/train_100_events
-output_dir: ./out/hitgraphs_100
+output_dir: ./out/hitgraphs_100_5GeV
 n_files: 100
 
 # Graph building configuration
 selection:
-    pt_min: 0. # GeV
-    phi_slope_max: 0.0006
-    z0_max: 100
-    n_phi_sections: 8
-    n_eta_sections: 2
+    pt_min: 5. # GeV
+    phi_slope_max: 0.000262
+    z0_max: 15000
+    n_phi_sections: 1
+    n_eta_sections: 1
     eta_range: [-5, 5]

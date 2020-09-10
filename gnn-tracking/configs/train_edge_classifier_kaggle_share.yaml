@@ -6,25 +6,25 @@ track_ml:
 
 data:
     name: hitgraphs
-    input_hitsgraph_dir: ./out/hitgraphs_100
-    output_nxgraph_dir: ./out/nxgraphs_100
+    input_hitsgraph_dir: ./out/hitgraphs_100_5GeV
+    output_nxgraph_dir: ./out/nxgraphs_100_5GeV
     log_name: data_process.log
     n_tasks: 1
     n_workers: 24
 
 selection:
-    pt_min: 0. # GeV
-    phi_slope_max: 0.0006
-    z0_max: 100
-    n_phi_sections: 8
-    n_eta_sections: 2
+    pt_min: 5. # GeV
+    phi_slope_max: 0.000262
+    z0_max: 15000 
+    n_phi_sections: 1
+    n_eta_sections: 1
     eta_range: [-5, 5]
 
 make_graph:
-    out_graph: ./out/nxgraphs_100
+    out_graph: ./out/nxgraphs_100_5GeV
 
 segment_training:
-    output_dir: ./out/segments_100
+    output_dir: ./out/segments_100_5GeV
     model_name: default
     prod_name: v0_kaggle
     log_name: big.log
@@ -33,7 +33,7 @@ segment_training:
         batch_size: 1
         iterations: 80000
         iter_per_job: 80000
-        n_iters: 8
+        n_iters: 1
         learning_rate: 0.001
         real_weight: 1.0
         fake_weight: 0.5
