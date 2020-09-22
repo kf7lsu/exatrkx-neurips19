@@ -19,12 +19,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='evalute GNN models')
     add_arg = parser.add_argument
     add_arg('config', help='configuration file for training')
-    add_arg('evtid', type=int, help='event ID')
     add_arg('--iteration',  type=int, default=-1)
     add_arg('--ckpt', default=None)
 
     args = parser.parse_args()
-    evtid = args.evtid
     iteration = args.iteration
     input_ckpt = args.ckpt
 
@@ -39,15 +37,9 @@ if __name__ == "__main__":
         input_ckpt = os.path.join(config['segment_training']['output_dir'],
                                   config['segment_training']['prod_name'])
 
-    file_names = [os.path.join(file_dir, "event000001000_g000000000_INPUT.npz")]
+    file_names = glob.glob(os.path.join(file_dir, "event00000*_g000000000_INPUT.npz"))
     true_features = ['pt', 'particle_id', 'nhits']
-    batch_size = 1
 
-    n_batches = 1
-
-    event = master.Event(trk_dir, evtid)
-    hits = event.hits
-    truth = event.truth
     model, model_c, sess = create_evaluator(config_file, iteration, input_ckpt)
 
     all_graphs = []
@@ -57,30 +49,44 @@ if __name__ == "__main__":
 
     input_graphs = []
     target_graphs = []
-    file_name = file_names[0]
-    with np.load(file_name) as f:
-        input_graphs.append(dict(f.items()))
+    for file_name in file_names:
+        base = os.path.basename(file_name)
+        ifile = int(base.split('_')[0].split('event')[-1])
+        
+        with np.load(file_name) as f:
+            input_graphs.append(dict(f.items()))
 
-    with np.load(file_name.replace("INPUT", "TARGET")) as f:
-        target_graphs.append(dict(f.items()))
+        with np.load(file_name.replace("INPUT", "TARGET")) as f:
+            target_graphs.append(dict(f.items()))
 
-    graphs = model(utils_np.data_dicts_to_graphs_tuple(input_graphs),
-                   utils_np.data_dicts_to_graphs_tuple(target_graphs),
-                   use_digraph=is_digraph, bidirection=is_bidirection)
-
-    I = input_graphs[0]
-    G = graphs[0]
-
-    nodes = I['nodes']
-    edges = I['edges']
-    receivers = I['receivers']
-    senders = I['senders']
-    globs = I['globals']
-    n_nodes = nodes.shape[0]
-    n_edges = edges.shape[0]
+            graphs = model(utils_np.data_dicts_to_graphs_tuple(input_graphs),
+                           utils_np.data_dicts_to_graphs_tuple(target_graphs),
+                           use_digraph=is_digraph, bidirection=is_bidirection)
 
 
-    predict = np.array([G.edges[edge]['predict'][0] for edge in G.edges()])
+        I = input_graphs[0]
+        T = target_graphs[0]
+        G = graphs[0]
+
+        nodes = I['nodes']
+        edges = I['edges']
+        receivers = I['receivers']
+        senders = I['senders']
+        globs = I['globals']
+        targets = T['edges']
+        n_nodes = nodes.shape[0]
+        n_edges = edges.shape[0]
+        
+        predict = np.array([G.edges[edge]['predict'][0] for edge in G.edges()])
+            
+        # save the input and output graphs for use in test bench
+        np.savetxt('tb_input_node_features_%04d.dat'%ifile,nodes.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_input_edge_features_%04d.dat'%ifile,edges.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_receivers.dat_%04d.dat'%ifile,receivers.reshape((1,-1)),delimiter=' ',fmt='%d')
+        np.savetxt('tb_senders.dat_%04d.dat'%ifile,senders.reshape((1,-1)),delimiter=' ',fmt='%d')
+        np.savetxt('tb_output_edge_predictions_%04d.dat'%ifile,predict.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_output_edge_targets_%04d.dat'%ifile,targets.reshape((1,-1)),delimiter=' ',fmt='%f')
+
 
     print('input node features:')
     print(' shape:', nodes.shape)
@@ -238,8 +244,10 @@ if __name__ == "__main__":
     n0 = n
     e0 = e
     for it in range(config['segment_training']['parameters']['n_iters']):
-        core_input_n = np.concatenate([n0, n], axis=1)
-        core_input_e = np.concatenate([e0, e], axis=1)
+        #core_input_n = np.concatenate([n0, n], axis=1)
+        #core_input_e = np.concatenate([e0, e], axis=1)
+        core_input_n = n
+        core_input_e = e
 
         print('nodes shape after concat iter {}:'.format(it), core_input_n.shape)
         print('edges shape after concat iter {}:'.format(it), core_input_e.shape)
@@ -308,13 +316,6 @@ if __name__ == "__main__":
     print(' shape:', e.shape)
     print(' values:', e)
     
-    # save the input and output graphs for use in test bench
-    np.savetxt('tb_input_node_features.dat',nodes.reshape((1,-1)),delimiter=' ',fmt='%f')
-    np.savetxt('tb_input_edge_features.dat',edges.reshape((1,-1)),delimiter=' ',fmt='%f')
-    np.savetxt('tb_receivers.dat',receivers.reshape((1,-1)),delimiter=' ',fmt='%d')
-    np.savetxt('tb_senders.dat',senders.reshape((1,-1)),delimiter=' ',fmt='%d')
-    np.savetxt('tb_output_edge_predictions.dat',predict.reshape((1,-1)),delimiter=' ',fmt='%f')
-
     encoder_node_weights_t = [encoder_node_weights[0].T, encoder_node_weights[1].T]
     encoder_node_biases_t = [encoder_node_biases[0].T, encoder_node_biases[1].T]
     encoder_edge_weights_t = [encoder_edge_weights[0].T, encoder_edge_weights[1].T]
@@ -323,8 +324,10 @@ if __name__ == "__main__":
     core_edge_biases_t = [core_edge_biases[0].T, core_edge_biases[1].T]
     core_node_weights_t = [core_node_weights[0].T, core_node_weights[1].T]
     core_node_biases_t = [core_node_biases[0].T, core_node_biases[1].T]
-    decoder_edge_weights_t = [decoder_edge_weights[0].T, decoder_edge_weights[1].T, decoder_edge_weights[2].T, decoder_edge_weights[3].T]
-    decoder_edge_biases_t = [decoder_edge_biases[0].T, decoder_edge_biases[1].T, decoder_edge_biases[2].T, decoder_edge_biases[3].T]
+    decoder_edge_weights_t = [decoder_edge_weights[0].T, decoder_edge_weights[1].T, 
+                              output_edge_weights[0].T, output_edge_weights[1].T]
+    decoder_edge_biases_t = [decoder_edge_biases[0].T, decoder_edge_biases[1].T, 
+                             output_edge_biases[0].T, output_edge_biases[1].T]
 
 
     import hls4ml
