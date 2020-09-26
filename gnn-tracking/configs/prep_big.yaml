@@ -1,7 +1,7 @@
 # Input/output configuration
-input_dir: /scratch/data/exatrkx/train_100_events
-output_dir: ./out/hitgraphs_100_2GeV
-n_files: 100
+input_dir: /scratch/data/exatrkx/train_1
+output_dir: ./out/hitgraphs_1_2GeV
+n_files: 1770
 
 # Graph building configuration
 selection:

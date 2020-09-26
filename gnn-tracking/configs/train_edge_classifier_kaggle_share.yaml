@@ -1,13 +1,13 @@
 track_ml:
-    dir:           /scratch/data/exatrkx/train_100_events
+    dir:           /scratch/data/exatrkx/train_1
     blacklist_dir: /scratch/data/exatrkx/blacklist_training
     detector: /scratch/data/exatrkx/detectors.csv
     layers: [7, 8, 9, 10, 24, 25, 26, 27, 40, 41]
 
 data:
     name: hitgraphs
-    input_hitsgraph_dir: ./out/hitgraphs_100_2GeV
-    output_nxgraph_dir: ./out/nxgraphs_100_2GeV
+    input_hitsgraph_dir: ./out/hitgraphs_1_2GeV
+    output_nxgraph_dir: ./out/nxgraphs_1_2GeV
     log_name: data_process.log
     n_tasks: 1
     n_workers: 24
@@ -24,10 +24,10 @@ selection:
     remove_intersecting_edges: true
 
 make_graph:
-    out_graph: ./out/nxgraphs_100_2GeV
+    out_graph: ./out/nxgraphs_1_2GeV
 
 segment_training:
-    output_dir: ./out/segments_100_2GeV
+    output_dir: ./out/segments_1_2GeV
     model_name: default
     prod_name: v0_kaggle
     log_name: big.log
