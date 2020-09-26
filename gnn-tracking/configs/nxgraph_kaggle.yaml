@@ -1,7 +1,7 @@
 data:
     name: hitgraphs
-    input_hitsgraph_dir:  out/hitgraphs_100_5GeV
-    output_nxgraph_dir: out/nxgraphs_100_5GeV
+    input_hitsgraph_dir:  out/hitgraphs_100_2GeV
+    output_nxgraph_dir: out/nxgraphs_100_2GeV
     input_evt_dir: /scratch/data/exatrkx/train_100_events
     blacklist_dir: /scratch/data/exatrkx/blacklist_training
     log_name: data_process.log

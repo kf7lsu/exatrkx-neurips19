@@ -57,6 +57,7 @@ if __name__ == "__main__":
         section_patten = base_dir.format(evtid, 0).replace('_g{:09}'.format(0), '*')
         print(section_patten)
         n_sections = int(len(glob.glob(section_patten)))
+        print(n_sections)
         print("Total {} sections".format(n_sections))
         file_names = [(base_dir.format(evtid, ii), ii) for ii in range(n_sections)]
     else:
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     event = master.Event(trk_dir, evtid)
     hits = event.hits
     truth = event.truth
-    model = create_evaluator(config_file, iteration, input_ckpt)
+    model, model_c, sess = create_evaluator(config_file, iteration, input_ckpt)
 
     all_graphs = []
     is_digraph = True
