@@ -431,7 +431,6 @@ def predicted_graphs_to_nxs(gnn_output, input_graphs, target_graphs, **kwargs):
     target_dds = utils_np.graphs_tuple_to_data_dicts(target_graphs)
 
     total_graphs = len(output_nxs)
-    print("total_graphs", total_graphs)
     graphs = []
     for ig in range(total_graphs):
         input_dd = input_dds[ig]
