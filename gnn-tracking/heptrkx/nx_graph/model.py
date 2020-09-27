@@ -8,7 +8,7 @@ from graph_nets import utils_tf
 import sonnet as snt
 
 NUM_LAYERS = 2   # Hard-code number of layers in the edge/node/global models.
-LATENT_SIZE = 32 # Hard-code latent layer sizes for demos.
+LATENT_SIZE = 8 # Hard-code latent layer sizes for demos.
 
 
 def make_mlp_model():

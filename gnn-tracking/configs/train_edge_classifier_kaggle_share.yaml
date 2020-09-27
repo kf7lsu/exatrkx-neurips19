@@ -27,7 +27,7 @@ make_graph:
     out_graph: ./out/nxgraphs_1_2GeV
 
 segment_training:
-    output_dir: ./out/segments_1_2GeV
+    output_dir: ./out/segments_1_2GeV_8dim
     model_name: default
     prod_name: v0_kaggle
     log_name: big.log
