@@ -13,6 +13,7 @@ import os
 import glob
 import argparse
 import sys
+import tqdm
 
 if __name__ == "__main__":
 
@@ -42,31 +43,23 @@ if __name__ == "__main__":
 
     model, model_c, sess = create_evaluator(config_file, iteration, input_ckpt)
 
-    all_graphs = []
     is_digraph = True
     is_bidirection = False
     # evaluate each graph                                                                                                        
 
-    input_graphs = []
-    target_graphs = []
-    for file_name in file_names:
+    for file_name in tqdm.tqdm(file_names,total=len(file_names)):
         base = os.path.basename(file_name)
         ifile = int(base.split('_')[0].split('event')[-1])
         
         with np.load(file_name) as f:
-            input_graphs.append(dict(f.items()))
+            I = dict(f.items())
 
         with np.load(file_name.replace("INPUT", "TARGET")) as f:
-            target_graphs.append(dict(f.items()))
+            T = dict(f.items())
 
-            graphs = model(utils_np.data_dicts_to_graphs_tuple(input_graphs),
-                           utils_np.data_dicts_to_graphs_tuple(target_graphs),
-                           use_digraph=is_digraph, bidirection=is_bidirection)
-
-
-        I = input_graphs[0]
-        T = target_graphs[0]
-        G = graphs[0]
+        G = model(utils_np.data_dicts_to_graphs_tuple([I]),
+                  utils_np.data_dicts_to_graphs_tuple([T]),
+                  use_digraph=is_digraph, bidirection=is_bidirection)[0]
 
         nodes = I['nodes']
         edges = I['edges']
@@ -76,7 +69,7 @@ if __name__ == "__main__":
         targets = T['edges']
         n_nodes = nodes.shape[0]
         n_edges = edges.shape[0]
-        
+
         predict = np.array([G.edges[edge]['predict'][0] for edge in G.edges()])
             
         # save the input and output graphs for use in test bench
