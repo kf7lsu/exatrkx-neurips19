@@ -38,7 +38,7 @@ if __name__ == "__main__":
         input_ckpt = os.path.join(config['segment_training']['output_dir'],
                                   config['segment_training']['prod_name'])
 
-    file_names = glob.glob(os.path.join(file_dir, "event00000*_g000000000_INPUT.npz"))
+    file_names = glob.glob(os.path.join(file_dir, "event00000*_g0000000*_INPUT.npz"))
     true_features = ['pt', 'particle_id', 'nhits']
 
     model, model_c, sess = create_evaluator(config_file, iteration, input_ckpt)
@@ -51,15 +51,17 @@ if __name__ == "__main__":
         base = os.path.basename(file_name)
         ifile = int(base.split('_')[0].split('event')[-1])
         
-        with np.load(file_name) as f:
+        with np.load(file_name,allow_pickle=True) as f:
             I = dict(f.items())
 
-        with np.load(file_name.replace("INPUT", "TARGET")) as f:
+        with np.load(file_name.replace("INPUT", "TARGET"),allow_pickle=True) as f:
             T = dict(f.items())
-
-        G = model(utils_np.data_dicts_to_graphs_tuple([I]),
-                  utils_np.data_dicts_to_graphs_tuple([T]),
-                  use_digraph=is_digraph, bidirection=is_bidirection)[0]
+        try:
+            G = model(utils_np.data_dicts_to_graphs_tuple([I]),
+                      utils_np.data_dicts_to_graphs_tuple([T]),
+                      use_digraph=is_digraph, bidirection=is_bidirection)[0]
+        except:
+            continue
 
         nodes = I['nodes']
         edges = I['edges']
@@ -75,8 +77,8 @@ if __name__ == "__main__":
         # save the input and output graphs for use in test bench
         np.savetxt('tb_input_node_features_%04d.dat'%ifile,nodes.reshape((1,-1)),delimiter=' ',fmt='%f')
         np.savetxt('tb_input_edge_features_%04d.dat'%ifile,edges.reshape((1,-1)),delimiter=' ',fmt='%f')
-        np.savetxt('tb_receivers.dat_%04d.dat'%ifile,receivers.reshape((1,-1)),delimiter=' ',fmt='%d')
-        np.savetxt('tb_senders.dat_%04d.dat'%ifile,senders.reshape((1,-1)),delimiter=' ',fmt='%d')
+        np.savetxt('tb_receivers_%04d.dat'%ifile,receivers.reshape((1,-1)),delimiter=' ',fmt='%d')
+        np.savetxt('tb_senders_%04d.dat'%ifile,senders.reshape((1,-1)),delimiter=' ',fmt='%d')
         np.savetxt('tb_output_edge_predictions_%04d.dat'%ifile,predict.reshape((1,-1)),delimiter=' ',fmt='%f')
         np.savetxt('tb_output_edge_targets_%04d.dat'%ifile,targets.reshape((1,-1)),delimiter=' ',fmt='%f')
 
