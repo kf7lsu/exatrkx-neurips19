@@ -46,16 +46,13 @@ if __name__ == "__main__":
     is_digraph = True
     is_bidirection = False
     # evaluate each graph                                                                                                        
+    generate_input_target = prepare.inputs_generator(file_dir, n_train_fraction=0.8)
 
-    for file_name in tqdm.tqdm(file_names,total=len(file_names)):
-        base = os.path.basename(file_name)
-        ifile = int(base.split('_')[0].split('event')[-1])
-        
-        with np.load(file_name,allow_pickle=True) as f:
-            I = dict(f.items())
-
-        with np.load(file_name.replace("INPUT", "TARGET"),allow_pickle=True) as f:
-            T = dict(f.items())
+    # hardcoded test size for now
+    for igraph in tqdm.tqdm(range(5664*16)):
+        input_graphs, target_graphs = generate_input_target(1,is_train=False)
+        I = input_graphs[0]
+        T = target_graphs[0]
         try:
             G = model(utils_np.data_dicts_to_graphs_tuple([I]),
                       utils_np.data_dicts_to_graphs_tuple([T]),
@@ -75,12 +72,12 @@ if __name__ == "__main__":
         predict = np.array([G.edges[edge]['predict'][0] for edge in G.edges()])
             
         # save the input and output graphs for use in test bench
-        np.savetxt('tb_input_node_features_%04d.dat'%ifile,nodes.reshape((1,-1)),delimiter=' ',fmt='%f')
-        np.savetxt('tb_input_edge_features_%04d.dat'%ifile,edges.reshape((1,-1)),delimiter=' ',fmt='%f')
-        np.savetxt('tb_receivers_%04d.dat'%ifile,receivers.reshape((1,-1)),delimiter=' ',fmt='%d')
-        np.savetxt('tb_senders_%04d.dat'%ifile,senders.reshape((1,-1)),delimiter=' ',fmt='%d')
-        np.savetxt('tb_output_edge_predictions_%04d.dat'%ifile,predict.reshape((1,-1)),delimiter=' ',fmt='%f')
-        np.savetxt('tb_output_edge_targets_%04d.dat'%ifile,targets.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_input_node_features_%04d.dat'%igraph,nodes.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_input_edge_features_%04d.dat'%igrahp,edges.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_receivers_%04d.dat'%igraph,receivers.reshape((1,-1)),delimiter=' ',fmt='%d')
+        np.savetxt('tb_senders_%04d.dat'%igraph,senders.reshape((1,-1)),delimiter=' ',fmt='%d')
+        np.savetxt('tb_output_edge_predictions_%04d.dat'%igraph,predict.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_output_edge_targets_%04d.dat'%igraph,targets.reshape((1,-1)),delimiter=' ',fmt='%f')
 
 
     print('input node features:')
