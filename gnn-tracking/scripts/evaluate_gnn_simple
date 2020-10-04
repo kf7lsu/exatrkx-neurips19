@@ -72,12 +72,12 @@ if __name__ == "__main__":
         predict = np.array([G.edges[edge]['predict'][0] for edge in G.edges()])
             
         # save the input and output graphs for use in test bench
-        np.savetxt('tb_input_node_features_%04d.dat'%igraph,nodes.reshape((1,-1)),delimiter=' ',fmt='%f')
-        np.savetxt('tb_input_edge_features_%04d.dat'%igrahp,edges.reshape((1,-1)),delimiter=' ',fmt='%f')
-        np.savetxt('tb_receivers_%04d.dat'%igraph,receivers.reshape((1,-1)),delimiter=' ',fmt='%d')
-        np.savetxt('tb_senders_%04d.dat'%igraph,senders.reshape((1,-1)),delimiter=' ',fmt='%d')
-        np.savetxt('tb_output_edge_predictions_%04d.dat'%igraph,predict.reshape((1,-1)),delimiter=' ',fmt='%f')
-        np.savetxt('tb_output_edge_targets_%04d.dat'%igraph,targets.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_input_node_features_%05d.dat'%igraph,nodes.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_input_edge_features_%05d.dat'%igraph,edges.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_receivers_%05d.dat'%igraph,receivers.reshape((1,-1)),delimiter=' ',fmt='%d')
+        np.savetxt('tb_senders_%05d.dat'%igraph,senders.reshape((1,-1)),delimiter=' ',fmt='%d')
+        np.savetxt('tb_output_edge_predictions_%05d.dat'%igraph,predict.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_output_edge_targets_%05d.dat'%igraph,targets.reshape((1,-1)),delimiter=' ',fmt='%f')
 
 
     print('input node features:')
