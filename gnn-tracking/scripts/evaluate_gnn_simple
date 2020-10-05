@@ -49,7 +49,8 @@ if __name__ == "__main__":
     generate_input_target = prepare.inputs_generator(file_dir, n_train_fraction=0.8)
 
     # hardcoded test size for now
-    for igraph in tqdm.tqdm(range(5664*16)):
+    #for igraph in tqdm.tqdm(range(5664*16)):
+    for igraph in tqdm.tqdm(range(1)):
         input_graphs, target_graphs = generate_input_target(1,is_train=False)
         I = input_graphs[0]
         T = target_graphs[0]
@@ -323,32 +324,35 @@ if __name__ == "__main__":
 
 
     import hls4ml
+    import shutil
     # save the weights for use in hls4ml
     print("saving weights for use in hls4ml")
-    os.makedirs('./firmware/weights', exist_ok=True)
-    for i, (w, b) in enumerate(zip(encoder_edge_weights_t, encoder_edge_biases_t)):
-        var = hls4ml.model.hls_model.WeightVariable('encoder_edge_w%i'%i, type_name='ap_fixed<16,6>', precision='<16,6>', data=w)
-        hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
-        var = hls4ml.model.hls_model.WeightVariable('encoder_edge_b%i'%i, type_name='ap_fixed<16,6>', precision='<16,6>', data=b)
-        hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
-    for i, (w, b) in enumerate(zip(core_edge_weights_t, core_edge_biases_t)):
-        var = hls4ml.model.hls_model.WeightVariable('core_edge_w%i'%i, type_name='ap_fixed<16,6>', precision='<16,6>', data=w)
-        hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
-        var = hls4ml.model.hls_model.WeightVariable('core_edge_b%i'%i, type_name='ap_fixed<16,6>', precision='<16,6>', data=b)
-        hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
-    for i, (w, b) in enumerate(zip(decoder_edge_weights_t, decoder_edge_biases_t)):
-        var = hls4ml.model.hls_model.WeightVariable('decoder_edge_w%i'%i, type_name='ap_fixed<16,6>', precision='<16,6>', data=w)
-        hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
-        var = hls4ml.model.hls_model.WeightVariable('decoder_edge_b%i'%i, type_name='ap_fixed<16,6>', precision='<16,6>', data=b)
-        hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+    for bit in range(8,32,2):
+        os.makedirs('./firmware/weights', exist_ok=True)
+        for i, (w, b) in enumerate(zip(encoder_edge_weights_t, encoder_edge_biases_t)):
+            var = hls4ml.model.hls_model.WeightVariable('encoder_edge_w%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=w)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+            var = hls4ml.model.hls_model.WeightVariable('encoder_edge_b%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=b)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+        for i, (w, b) in enumerate(zip(core_edge_weights_t, core_edge_biases_t)):
+            var = hls4ml.model.hls_model.WeightVariable('core_edge_w%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=w)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+            var = hls4ml.model.hls_model.WeightVariable('core_edge_b%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=b)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+        for i, (w, b) in enumerate(zip(decoder_edge_weights_t, decoder_edge_biases_t)):
+            var = hls4ml.model.hls_model.WeightVariable('decoder_edge_w%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=w)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+            var = hls4ml.model.hls_model.WeightVariable('decoder_edge_b%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=b)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+        for i, (w, b) in enumerate(zip(encoder_node_weights_t, encoder_node_biases_t)):
+            var = hls4ml.model.hls_model.WeightVariable('encoder_node_w%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=w)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+            var = hls4ml.model.hls_model.WeightVariable('encoder_node_b%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=b)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+        for i, (w, b) in enumerate(zip(core_node_weights_t, core_node_biases_t)):
+            var = hls4ml.model.hls_model.WeightVariable('core_node_w%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=w)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+            var = hls4ml.model.hls_model.WeightVariable('core_node_b%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=b)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
 
-    for i, (w, b) in enumerate(zip(encoder_node_weights_t, encoder_node_biases_t)):
-        var = hls4ml.model.hls_model.WeightVariable('encoder_node_w%i'%i, type_name='ap_fixed<16,6>', precision='<16,6>', data=w)
-        hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
-        var = hls4ml.model.hls_model.WeightVariable('encoder_node_b%i'%i, type_name='ap_fixed<16,6>', precision='<16,6>', data=b)
-        hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
-    for i, (w, b) in enumerate(zip(core_node_weights_t, core_node_biases_t)):
-        var = hls4ml.model.hls_model.WeightVariable('core_node_w%i'%i, type_name='ap_fixed<16,6>', precision='<16,6>', data=w)
-        hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
-        var = hls4ml.model.hls_model.WeightVariable('core_node_b%i'%i, type_name='ap_fixed<16,6>', precision='<16,6>', data=b)
-        hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+        shutil.copytree('./firmware/weights', './firmware/weights_%i'%bit)

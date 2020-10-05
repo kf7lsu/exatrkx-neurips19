@@ -16,8 +16,8 @@ selection:
     pt_min: 2. # GeV
     phi_slope_max: 0.000262
     z0_max: 15000 
-    n_phi_sections: 1
-    n_eta_sections: 1
+    n_phi_sections: 8
+    n_eta_sections: 2
     eta_range: [-5, 5]
     phi_reflect: false
     endcaps: true
@@ -27,7 +27,7 @@ make_graph:
     out_graph: ./out/nxgraphs_1_2GeV
 
 segment_training:
-    output_dir: ./out/segments_1_2GeV_8dim
+    output_dir: ./out/segments_1_2GeV
     model_name: default
     prod_name: v0_kaggle
     log_name: big.log
@@ -38,5 +38,5 @@ segment_training:
         iter_per_job: 80000
         n_iters: 1
         learning_rate: 0.001
-        real_weight: 0.1
-        fake_weight: 1.0
+        real_weight: 0.33
+        fake_weight: 1.00

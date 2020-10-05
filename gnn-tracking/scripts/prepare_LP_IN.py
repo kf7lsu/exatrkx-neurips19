@@ -6,6 +6,7 @@ This script processes the TrackML dataset and produces graph data on disk.
 
 # System
 import os
+import time
 import argparse
 import logging
 import multiprocessing as mp
@@ -58,6 +59,7 @@ def select_segments(hits1, hits2, phi_slope_max, z0_max,
     Returns: pd DataFrame of (index_1, index_2), corresponding to the
     DataFrame hit label-indices in hits1 and hits2, respectively.
     """
+    
     # Start with all possible pairs of hits
     keys = ['evtid', 'r', 'phi', 'z']
     hit_pairs = hits1[keys].reset_index().merge(
@@ -75,12 +77,12 @@ def select_segments(hits1, hits2, phi_slope_max, z0_max,
     if remove_intersecting_edges:
         
         # Innermost barrel layer --> innermost L,R endcap layers
-        if (layer1 == 0) and (layer2 == 4 or layer2 == 10):
+        if (layer1 == 0) and (layer2 == 11 or layer2 == 10):
             z_coord = 71.56298065185547 * dz/dr + z0
-            intersected_layer = (z_coord > -490.975) & (z_coord < 490.975)
-        if (layer1 == 1) and (layer2 == 4 or layer2 == 10):
+            intersected_layer = np.logical_and(z_coord > -490.975, z_coord < 490.975)
+        if (layer1 == 1) and (layer2 == 11 or layer2 == 10):
             z_coord = 115.37811279296875 * dz / dr + z0
-            intersected_layer = (z_coord > -490.975) & (z_coord < 490.975)
+            intersected_layer = np.logical_and(z_coord > -490.975, z_coord < 490.975)
         
     # Filter segments according to criteria
     good_seg_mask = (phi_slope.abs() < phi_slope_max) & (z0.abs() < z0_max) & (intersected_layer == False)
@@ -91,7 +93,9 @@ def construct_graph(hits, layer_pairs, phi_slope_max, z0_max,
                     feature_names, feature_scale, evtid="-1",
                     remove_intersecting_edges = False):
     """Construct one graph (e.g. from one event)"""
-
+    
+    t0 = time.time()
+    
     # Loop over layer pairs and construct segments
     layer_groups = hits.groupby('layer')
     segments = []
@@ -106,9 +110,10 @@ def construct_graph(hits, layer_pairs, phi_slope_max, z0_max,
             logging.info('skipping empty layer: %s' % e)
             continue
         # Construct the segments
-        #print("layer1, layer2 = ", hits1, hits2)
-        segments.append(select_segments(hits1, hits2, layer1, layer2,
-                                        phi_slope_max, z0_max))
+        selected = select_segments(hits1, hits2, phi_slope_max, z0_max,
+                                   layer1, layer2)
+        segments.append(selected)#select_segments(hits1, hits2, layer1, layer2,
+                         #               phi_slope_max, z0_max))
     # Combine segments from all layer pairs
     segments = pd.concat(segments)
 
@@ -143,6 +148,9 @@ def construct_graph(hits, layer_pairs, phi_slope_max, z0_max,
     pid2 = hits.particle_id.loc[segments.index_2].values
     y[:] = (pid1 == pid2)
     # Return a tuple of the results
+    
+    print("took {0} seconds".format(time.time()-t0))
+    
     return Graph(X, Ri, Ro, y), I
 
 def select_hits(hits, truth, particles, pt_min=0, endcaps=False):
@@ -176,6 +184,7 @@ def select_hits(hits, truth, particles, pt_min=0, endcaps=False):
     hits = hits.loc[
         hits.groupby(['particle_id', 'layer'], as_index=False).r.idxmin()
     ]
+    
     return hits
 
 def split_detector_sections(hits, phi_edges, eta_edges):
@@ -243,30 +252,29 @@ def process_event(prefix, output_dir, pt_min, n_eta_sections, n_phi_sections,
     # Construct the graph
     logging.info('Event %i, constructing graphs' % evtid)
     graphs_all = [construct_graph(section_hits, layer_pairs=layer_pairs,
-                              phi_slope_max=phi_slope_max, z0_max=z0_max,
-                              feature_names=feature_names,
-                              feature_scale=feature_scale,
-                              evtid=evtid, 
-                              remove_intersecting_edges=remove_intersecting_edges)
-              for section_hits in hits_sections]
+                                  phi_slope_max=phi_slope_max, z0_max=z0_max,
+                                  feature_names=feature_names,
+                                  feature_scale=feature_scale,
+                                  evtid=evtid, 
+                                  remove_intersecting_edges=remove_intersecting_edges)
+                  for section_hits in hits_sections]
     graphs = [x[0] for x in graphs_all]
     IDs    = [x[1] for x in graphs_all]
 
+    
     # Write these graphs to the output directory
     try:
         base_prefix = os.path.basename(prefix)
         filenames = [os.path.join(output_dir, '%s_g%03i' % (base_prefix, i))
                      for i in range(len(graphs))]
         filenames_ID = [os.path.join(output_dir, '%s_g%03i_ID' % (base_prefix, i))
-                     for i in range(len(graphs))]
+                        for i in range(len(graphs))]
+
     except Exception as e:
         logging.info(e)
     
     logging.info('Event %i, writing graphs', evtid)    
     save_graphs(graphs, filenames)
-    for ID, file_name in zip(IDs, filenames_ID):
-        if ID is not None:
-            np.savez(file_name, ID=ID)
 
 def main():
     """Main function"""
@@ -282,8 +290,9 @@ def main():
     if args.show_config:
         logging.info('Command line config: %s' % args)
 
-    # Load configuration    
-    config = load_yaml(args.config)
+    # Load configuration
+    with open(args.config) as f:
+        config = yaml.load(f)
     if args.task == 0:
         logging.info('Configuration: %s' % config)
 
