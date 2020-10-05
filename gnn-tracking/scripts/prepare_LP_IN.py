@@ -273,8 +273,11 @@ def process_event(prefix, output_dir, pt_min, n_eta_sections, n_phi_sections,
     except Exception as e:
         logging.info(e)
     
-    logging.info('Event %i, writing graphs', evtid)    
+    logging.info('Event %i, writing graphs', evtid)
     save_graphs(graphs, filenames)
+    for ID, file_name in zip(IDs, filenames_ID):
+        if ID is not None:
+            np.savez(file_name, ID=ID)
 
 def main():
     """Main function"""
@@ -291,8 +294,7 @@ def main():
         logging.info('Command line config: %s' % args)
 
     # Load configuration
-    with open(args.config) as f:
-        config = yaml.load(f)
+    config = load_yaml(args.config)
     if args.task == 0:
         logging.info('Configuration: %s' % config)
 
