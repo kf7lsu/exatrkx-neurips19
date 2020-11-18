@@ -1,0 +1,42 @@
+track_ml:
+    dir:           /scratch/data/exatrkx/train_1
+    blacklist_dir: /scratch/data/exatrkx/blacklist_training
+    detector: /scratch/data/exatrkx/detectors.csv
+    layers: [7, 8, 9, 10, 24, 25, 26, 27, 40, 41]
+
+data:
+    name: hitgraphs
+    input_hitsgraph_dir: ./out/hitgraphs_1_2GeV
+    output_nxgraph_dir: ./out/nxgraphs_1_2GeV
+    log_name: data_process.log
+    n_tasks: 1
+    n_workers: 24
+
+selection:
+    pt_min: 2. # GeV
+    phi_slope_max: 0.000262
+    z0_max: 15000 
+    n_phi_sections: 8
+    n_eta_sections: 2
+    eta_range: [-5, 5]
+    phi_reflect: false
+    endcaps: true
+    remove_intersecting_edges: true
+
+make_graph:
+    out_graph: ./out/nxgraphs_1_2GeV
+
+segment_training:
+    output_dir: ./out/segments_1_2GeV_objrel
+    model_name: OBJREL
+    prod_name: v0_kaggle
+    log_name: big.log
+    parameters:
+        time_lapse:  60 # how often save checkpoint in seconds
+        batch_size: 16
+        iterations: 80000
+        iter_per_job: 80000
+        n_iters: 1
+        learning_rate: 0.001
+        real_weight: 0.33
+        fake_weight: 1.00
