@@ -19,15 +19,13 @@ class SegmentClassifier(snt.AbstractModule):
     ])
   
     self._rel_mlp = snt.Sequential([
-      snt.nets.MLP([250, 250, 250, 4],
+      snt.nets.MLP([250, 250, 250, 1],
                    activation=tf.nn.relu,
                    activate_final=False),
     ])
 
-    self._rel_sigmoid = snt.Sequential([snt.nets.MLP([1],
-                                                     activation=tf.nn.sigmoid,
-                                                     activate_final=True)
-                                      ])
+    self._rel_sigmoid = snt.Sequential([tf.nn.sigmoid])
+
     with self._enter_variable_scope():
       self._second = modules.GraphIndependent(edge_model_fn=lambda: self._rel_sigmoid, 
                                               node_model_fn=None, 

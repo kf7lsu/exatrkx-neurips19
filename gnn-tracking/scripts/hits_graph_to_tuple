@@ -10,7 +10,7 @@ from heptrkx.nx_graph import prepare
 from heptrkx.datasets.graph import load_graph
 import multiprocessing as mp
 
-def process_event(evt_id, input_dir, n_sections, output, bidirection):
+def process_event(evt_id, input_dir, n_sections, output, bidirection, no_edge_feature=False):
     saver_fn = prepare.get_networkx_saver(output)
     for isec in range(n_sections):
         input_name = os.path.join(
@@ -30,7 +30,7 @@ def process_event(evt_id, input_dir, n_sections, output, bidirection):
             graph = utils_data.hitsgraph_to_nx(
                 load_graph(input_name), IDs=IDs, bidirection=bidirection)
 
-            saver_fn(evt_id, isec, graph)
+            saver_fn(evt_id, isec, graph, no_edge_feature)
 
 if __name__ == "__main__":
     import numpy as np
@@ -44,6 +44,7 @@ if __name__ == "__main__":
     add_arg = parser.add_argument
     add_arg('config', help="job configuration")
     add_arg('-b', '--bidirection', action='store_true')
+    add_arg('-n', '--no-edge-feature', action='store_true')
     add_arg('-i', '--itask', type=int, default=0)
     args = parser.parse_args()
 
@@ -88,5 +89,6 @@ if __name__ == "__main__":
                         input_dir=input_dir,
                         n_sections=n_sections,
                         output=output,
-                        bidirection=args.bidirection)
+                        bidirection=args.bidirection,
+                        no_edge_feature=args.no_edge_feature)
         pool.map(pp_fn, evt_ids_split)
