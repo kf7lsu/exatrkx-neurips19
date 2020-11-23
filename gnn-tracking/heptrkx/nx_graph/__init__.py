@@ -12,6 +12,7 @@ def get_model(model_name=None):
     from .model_smart    import SegmentClassifier as mm_sm
     from .model_vary     import SegmentClassifier as mm_vary
     from .model_vary2    import SegmentClassifier as mm_vary2
+    from .model_objrel    import SegmentClassifier as mm_objrel
 
     # model_name could be used for future testing different models
 
@@ -23,6 +24,8 @@ def get_model(model_name=None):
         return mm_vary()
     elif model_name == "VARY2":
         return mm_vary2()
+    elif model_name == "OBJREL":
+        return mm_objrel()
     else:
         return mm()
 

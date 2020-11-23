@@ -1,0 +1,234 @@
+#!/usr/bin/env python                                                                                                             
+import networkx as nx
+import numpy as np
+
+from graph_nets import utils_np, utils_tf
+
+from heptrkx import load_yaml
+from heptrkx.nx_graph import utils_plot, utils_data, utils_train, prepare, utils_test
+from heptrkx.postprocess import wrangler, analysis, inference
+from heptrkx import master
+
+import os
+import glob
+import argparse
+import sys
+import tqdm
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description='evalute GNN models')
+    add_arg = parser.add_argument
+    add_arg('config', help='configuration file for training')
+    add_arg('--iteration',  type=int, default=-1)
+    add_arg('--ckpt', default=None)
+
+    args = parser.parse_args()
+    iteration = args.iteration
+    input_ckpt = args.ckpt
+
+    from heptrkx.postprocess.evaluate_tf import create_evaluator
+
+    config_file = args.config
+    config = load_yaml(config_file)
+    file_dir = config['make_graph']['out_graph']
+    hits_graph_dir = config['data']['input_hitsgraph_dir']
+    trk_dir = config['track_ml']['dir']
+    if input_ckpt is None:
+        input_ckpt = os.path.join(config['segment_training']['output_dir'],
+                                  config['segment_training']['prod_name'])
+
+    file_names = glob.glob(os.path.join(file_dir, "event00000*_g0000000*_INPUT.npz"))
+    true_features = ['pt', 'particle_id', 'nhits']
+
+    model, model_c, sess = create_evaluator(config_file, iteration, input_ckpt)
+
+    is_digraph = True
+    is_bidirection = False
+    # evaluate each graph                                                                                                        
+    generate_input_target = prepare.inputs_generator(file_dir, n_train_fraction=0.8)
+
+    os.makedirs('./tb_data', exist_ok=True)
+    os.makedirs('./firmware/weights', exist_ok=True)
+
+    # hardcoded test size for now
+    #for igraph in tqdm.tqdm(range(5664*16)):
+    for igraph in tqdm.tqdm(range(10*16)):
+        input_graphs, target_graphs = generate_input_target(1,is_train=False)
+        I = input_graphs[0]
+        T = target_graphs[0]
+        try:
+            G = model(utils_np.data_dicts_to_graphs_tuple([I]),
+                      utils_np.data_dicts_to_graphs_tuple([T]),
+                      use_digraph=is_digraph, bidirection=is_bidirection)[0]
+        except:
+            continue
+
+        nodes = I['nodes']
+        edges = I['edges']
+        receivers = I['receivers']
+        senders = I['senders']
+        globs = I['globals']
+        targets = T['edges']
+        n_nodes = nodes.shape[0]
+        n_edges = edges.shape[0]
+
+        predict = np.array([G.edges[edge]['predict'][0] for edge in G.edges()])
+            
+        # save the input and output graphs for use in test bench
+        np.savetxt('tb_data/tb_input_node_features_%05d.dat'%igraph,nodes.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_data/tb_input_edge_features_%05d.dat'%igraph,edges.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_data/tb_receivers_%05d.dat'%igraph,receivers.reshape((1,-1)),delimiter=' ',fmt='%d')
+        np.savetxt('tb_data/tb_senders_%05d.dat'%igraph,senders.reshape((1,-1)),delimiter=' ',fmt='%d')
+        np.savetxt('tb_data/tb_output_edge_predictions_%05d.dat'%igraph,predict.reshape((1,-1)),delimiter=' ',fmt='%f')
+        np.savetxt('tb_data/tb_output_edge_targets_%05d.dat'%igraph,targets.reshape((1,-1)),delimiter=' ',fmt='%f')
+
+
+    print('input node features:')
+    print(' shape:', nodes.shape)
+    print(' values:', nodes)
+    print()
+    print('input edge features:')
+    print(' shape:', edges.shape)
+    print(' values:', edges)
+    print()
+    print('input global features:')
+    print(' shape:', globs.shape)
+    print(' values:', globs)
+    print()
+    print('input receivers:')
+    print(' shape:', receivers.shape)
+    print(' values:', receivers)
+    print()
+    print('input senders:')
+    print(' shape:', senders.shape)
+    print(' values:', senders)
+    print()
+    print('predicted edge weights:')
+    print(' shape:', predict.shape)
+    print(' values:', predict)
+
+    core_edge_weights = []
+    core_edge_biases = []
+    core_node_weights = []
+    core_node_biases = []
+    for layer in model_c._first._edge_block._edge_model._layers:
+        for sublayer in layer._layers:
+            core_edge_weights.append(sublayer._w.eval(session=sess))
+            core_edge_biases.append(sublayer._b.eval(session=sess))
+    for layer in model_c._first._node_block._node_model._layers:
+        for sublayer in layer._layers:
+            core_node_weights.append(sublayer._w.eval(session=sess))
+            core_node_biases.append(sublayer._b.eval(session=sess))
+
+
+    print()
+    print('model:')
+    print()
+
+    for i, (w, b) in enumerate(zip(core_edge_weights, core_edge_biases)):
+        print('core edge weights layer {}:'.format(i))
+        print(' shape:', w.shape)
+        print(' values:', w)
+        print()
+        print('core edge biases layer {}:'.format(i))
+        print(' shape:', b.shape)
+        print(' values:', b)
+        print()
+
+    for i, (w, b) in enumerate(zip(core_node_weights, core_node_biases)):
+        print('core node weights layer {}:'.format(i))
+        print(' shape:', w.shape)
+        print(' values:', w)
+        print()
+        print('core node biases layer {}:'.format(i))
+        print(' shape:', b.shape)
+        print(' values:', b)
+        print()
+
+ 
+    print('evaulate by hand:')
+    print()
+    print('input nodes shape:', nodes.shape)
+    print('input edges shape:', edges.shape)
+    print()
+
+    n = nodes
+    e = edges
+    nodes_receive = np.zeros((n_nodes,core_edge_biases[-1].shape[0]))
+    edges_update = np.zeros((n_edges,core_edge_biases[-1].shape[0]))
+    for k, (r, s) in enumerate(zip(receivers, senders)):
+        l = np.concatenate([e[k],n[r],n[s]])
+        for j,(w,b) in enumerate(zip(core_edge_weights,core_edge_biases)):        
+            if j>0: 
+                l = np.maximum(0,l) # activate all except final
+            l = l.dot(w)
+            l += b
+        edges_update[k] = l
+        nodes_receive[r] += l
+
+    nodes_update = np.zeros((n_nodes,core_node_biases[-1].shape[0]))
+    for i in range(n_nodes):
+        l = np.concatenate([nodes_receive[i], n[i]])
+        for j,(w,b) in enumerate(zip(core_node_weights,core_node_biases)):
+            if j>0: 
+                l = np.maximum(0,l) # activate all except final
+            l = l.dot(w)
+            l += b
+        nodes_update[i] = l
+
+    n = nodes_update
+    e = edges_update
+
+    nodes_receive = np.zeros((n_nodes,core_edge_biases[-1].shape[0]))
+    edges_update = np.zeros((n_edges,core_edge_biases[-1].shape[0]))
+    for k, (r, s) in enumerate(zip(receivers, senders)):
+        l = np.concatenate([e[k],n[r],n[s]])
+        for j,(w,b) in enumerate(zip(core_edge_weights,core_edge_biases)):        
+            if j>0: 
+                l = np.maximum(0,l) # activate all except final
+            l = l.dot(w)
+            l += b
+        edges_update[k] = l
+        nodes_receive[r] += l
+
+    e = edges_update
+
+    print('nodes shape after core:', n.shape)
+    print('edges shape after core:', e.shape)
+    print()
+
+    def sigmoid(x):  
+        return np.exp(-np.logaddexp(0, -x))
+        
+    e = sigmoid(e)
+    e = e.flatten()
+    
+    print('predicted edge weights from model:')
+    print(' shape:', predict.shape)
+    print(' values:', predict)
+    print()
+    print('predicted edge weights by hand:')
+    print(' shape:', e.shape)
+    print(' values:', e)
+    targets = targets.flatten()
+    print('targets:')
+    print(' shape:', targets.shape)
+    print(' values:', targets)
+    
+    core_edge_weights_t = [w.T for w in core_edge_weights]
+    core_edge_biases_t = [b.T for b in core_edge_biases]
+    core_node_weights_t = [w.T for w in core_node_weights]
+    core_node_biases_t = [b.T for b in core_node_biases]
+
+
+    import hls4ml
+    import shutil
+    # save the weights for use in hls4ml
+    print("saving weights for use in hls4ml")
+    for bit in [16]:
+        for i, (w, b) in enumerate(zip(core_edge_weights_t, core_edge_biases_t)):
+            var = hls4ml.model.hls_model.WeightVariable('core_edge_w%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=w)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+            var = hls4ml.model.hls_model.WeightVariable('core_edge_b%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=b)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')

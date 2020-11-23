@@ -197,7 +197,7 @@ def get_networkx_saver(output_dir_):
     save networkx graph as data dict for TF
     """
     output_dir = output_dir_
-    def save_networkx(evt_id, isec, graph):
+    def save_networkx(evt_id, isec, graph, no_edge_feature=False):
         output_data_name = os.path.join(
             output_dir,
             'event{:09d}_g{:09d}_{}.npz'.format(evt_id, isec, INPUT_NAME))
@@ -208,7 +208,7 @@ def get_networkx_saver(output_dir_):
         if graph is None:
             return False
 
-        input_graph, target_graph = graph_to_input_target(graph)
+        input_graph, target_graph = graph_to_input_target(graph, no_edge_feature)
         output_data = utils_np.networkx_to_data_dict(input_graph)
         target_data = utils_np.networkx_to_data_dict(target_graph)
 
