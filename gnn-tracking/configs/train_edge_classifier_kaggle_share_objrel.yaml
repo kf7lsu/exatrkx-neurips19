@@ -27,7 +27,7 @@ make_graph:
     out_graph: ./out/nxgraphs_1_2GeV_objrel
 
 segment_training:
-    output_dir: ./out/segments_1_2GeV_objrel_8_8
+    output_dir: ./out/segments_1_2GeV_objrel_8_8_sigmoid
     model_name: OBJREL
     prod_name: v0_kaggle
     log_name: big.log

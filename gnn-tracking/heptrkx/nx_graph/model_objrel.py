@@ -25,16 +25,8 @@ class SegmentClassifier(snt.AbstractModule):
       snt.nets.MLP([REL_HIDDEN, REL_HIDDEN, REL_HIDDEN, 1],
                    activation=tf.nn.relu,
                    activate_final=False),
+      tf.nn.sigmoid
     ])
-
-    self._rel_sigmoid = snt.Sequential([tf.nn.sigmoid])
-
-    with self._enter_variable_scope():
-      self._second = modules.GraphIndependent(edge_model_fn=lambda: self._rel_sigmoid, 
-                                              node_model_fn=None, 
-                                              global_model_fn=None)
-
-
 
     self._first = modules.InteractionNetwork(
       edge_model_fn=lambda: self._rel_mlp,
@@ -46,9 +38,7 @@ class SegmentClassifier(snt.AbstractModule):
 
     output_ops = []
     latent = self._first(input_op)
-    #latent = utils_tf.concat([input_op, latent], axis=1)
     latent = self._first(latent)
-    latent = self._second(latent)
     # Transforms the outputs into appropriate shapes.
     output_ops.append(latent)
 

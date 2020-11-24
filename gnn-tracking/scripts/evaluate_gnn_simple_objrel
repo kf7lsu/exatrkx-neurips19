@@ -113,15 +113,19 @@ if __name__ == "__main__":
     core_node_weights = []
     core_node_biases = []
     for layer in model_c._first._edge_block._edge_model._layers:
-        for sublayer in layer._layers:
-            core_edge_weights.append(sublayer._w.eval(session=sess))
-            core_edge_biases.append(sublayer._b.eval(session=sess))
+        if hasattr(layer,'_layers'):
+            for sublayer in layer._layers:
+                core_edge_weights.append(sublayer._w.eval(session=sess))
+                core_edge_biases.append(sublayer._b.eval(session=sess))
     for layer in model_c._first._node_block._node_model._layers:
-        for sublayer in layer._layers:
-            core_node_weights.append(sublayer._w.eval(session=sess))
-            core_node_biases.append(sublayer._b.eval(session=sess))
+        if hasattr(layer,'_layers'):
+            for sublayer in layer._layers:
+                core_node_weights.append(sublayer._w.eval(session=sess))
+                core_node_biases.append(sublayer._b.eval(session=sess))
 
-
+    def sigmoid(x):  
+        return np.exp(-np.logaddexp(0, -x))
+        
     print()
     print('model:')
     print()
@@ -164,6 +168,7 @@ if __name__ == "__main__":
                 l = np.maximum(0,l) # activate all except final
             l = l.dot(w)
             l += b
+        l = sigmoid(l)
         edges_update[k] = l
         nodes_receive[r] += l
 
@@ -189,6 +194,7 @@ if __name__ == "__main__":
                 l = np.maximum(0,l) # activate all except final
             l = l.dot(w)
             l += b
+        l = sigmoid(l)
         edges_update[k] = l
         nodes_receive[r] += l
 
@@ -198,10 +204,6 @@ if __name__ == "__main__":
     print('edges shape after core:', e.shape)
     print()
 
-    def sigmoid(x):  
-        return np.exp(-np.logaddexp(0, -x))
-        
-    e = sigmoid(e)
     e = e.flatten()
     
     print('predicted edge weights from model:')
