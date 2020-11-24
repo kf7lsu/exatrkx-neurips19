@@ -234,3 +234,8 @@ if __name__ == "__main__":
             hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
             var = hls4ml.model.hls_model.WeightVariable('core_edge_b%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=b)
             hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+        for i, (w, b) in enumerate(zip(core_node_weights_t, core_node_biases_t)):
+            var = hls4ml.model.hls_model.WeightVariable('core_node_w%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=w)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
+            var = hls4ml.model.hls_model.WeightVariable('core_node_b%i'%i, type_name='ap_fixed<%i,6>'%bit, precision='<%i,6>'%bit, data=b)
+            hls4ml.writer.VivadoWriter.print_array_to_cpp(None,var,'./')
