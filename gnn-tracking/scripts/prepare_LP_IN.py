@@ -115,7 +115,11 @@ def construct_graph(hits, layer_pairs, phi_slope_max, z0_max,
         segments.append(selected)#select_segments(hits1, hits2, layer1, layer2,
                          #               phi_slope_max, z0_max))
     # Combine segments from all layer pairs
-    segments = pd.concat(segments)
+    try:
+        segments = pd.concat(segments)
+    except ValueError:
+        logging.info('skipping empty graph')
+        return None, None
 
     # Prepare the graph matrices
     n_hits = hits.shape[0]
