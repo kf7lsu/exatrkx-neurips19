@@ -5,6 +5,8 @@ message-passing graph neural networks for hit or segment classification.
 
 import torch
 import torch.nn as nn
+from brevitas.nn import QuantLinear, QuantTanh, QuantSigmoid
+from brevitas.core.quant import QuantType
 
 class EdgeNetwork(nn.Module):
     """
@@ -16,17 +18,25 @@ class EdgeNetwork(nn.Module):
     def __init__(self, input_dim, hidden_dim=8, hidden_activation=nn.Tanh):
         super(EdgeNetwork, self).__init__()
         self.network = nn.Sequential(
-            nn.Linear(input_dim*2, hidden_dim),
+            #nn.Linear(input_dim*2, hidden_dim),
+            QuantLinear(input_dim*2, hidden_dim, True),
             nn.LayerNorm(hidden_dim),
-            hidden_activation(),
-            nn.Linear(hidden_dim, hidden_dim),
+            #hidden_activation(),
+            QuantTanh(),
+            #nn.Linear(hidden_dim, hidden_dim),
+            QuantLinear(hidden_dim, hidden_dim, True),
             nn.LayerNorm(hidden_dim),
-            hidden_activation(),
-            nn.Linear(hidden_dim, hidden_dim),
+            #hidden_activation(),
+            QuantTanh(),
+            #nn.Linear(hidden_dim, hidden_dim),
+            QuantLinear(hidden_dim, hidden_dim, True),
             nn.LayerNorm(hidden_dim),
-            hidden_activation(),
-            nn.Linear(hidden_dim, 1),
-            nn.Sigmoid())
+            #hidden_activation(),
+            QuantTanh(),
+            #nn.Linear(hidden_dim, 1),
+            QuantLinear(hidden_dim, 1, True),
+            #nn.Sigmoid())
+            QuantSigmoid())
     def forward(self, X, Ri, Ro):
         # Select the features of the associated nodes
         bo = torch.bmm(Ro.transpose(1, 2), X)
@@ -46,18 +56,26 @@ class NodeNetwork(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_activation=nn.Tanh):
         super(NodeNetwork, self).__init__()
         self.network = nn.Sequential(
-            nn.Linear(input_dim*3, output_dim),
+            #nn.Linear(input_dim*3, output_dim),
+            QuantLinear(input_dim*3, output_dim, True),
             nn.LayerNorm(output_dim),
-            hidden_activation(),
-            nn.Linear(output_dim, output_dim),
+            #hidden_activation(),
+            QuantTanh()
+            #nn.Linear(output_dim, output_dim),
+            QuantLinear(output_dim, output_dim, True),
             nn.LayerNorm(output_dim),
-            hidden_activation(),
-            nn.Linear(output_dim, output_dim),
+            #hidden_activation(),
+            QuantTanh(),
+            #nn.Linear(output_dim, output_dim),
+            QuantLinear(output_dim, output_dim, True),
             nn.LayerNorm(output_dim),
-            hidden_activation(),
-            nn.Linear(output_dim, output_dim),
+            #hidden_activation(),
+            QuantTanh(),
+            #nn.Linear(output_dim, output_dim),
+            QuantLinear(output_dim, output_dim, True),
             nn.LayerNorm(output_dim),
-            hidden_activation())
+            #hidden_activation())
+            QuantTanh())
     def forward(self, X, e, Ri, Ro):
         bo = torch.bmm(Ro.transpose(1, 2), X)
         bi = torch.bmm(Ri.transpose(1, 2), X)
@@ -78,8 +96,10 @@ class GNNSegmentClassifier(nn.Module):
         self.n_iters = n_iters
         # Setup the input network
         self.input_network = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            hidden_activation())
+            #nn.Linear(input_dim, hidden_dim),
+            QuantLinear(input_dim, hidden_dim, True),
+            #hidden_activation())
+            QuantTanh())
         # Setup the edge network
         self.edge_network = EdgeNetwork(input_dim+hidden_dim, hidden_dim,
                                         hidden_activation)
